@@ -1,21 +1,3 @@
-/*
- * Copyright (C) 2015.  Jacob Bieker, jacob@bieker.us, ww.jacobbieker.com
- *
- *                                This program is free software; you can redistribute it and/or modify
- *                                it under the terms of the GNU General Public License as published by
- *                                the Free Software Foundation; either version 2 of the License, or
- *                                (at your option) any later version.
- *
- *                                This program is distributed in the hope that it will be useful,
- *                                but WITHOUT ANY WARRANTY; without even the implied warranty of
- *                                MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *                                GNU General Public License for more details.
- *
- *                                You should have received a copy of the GNU General Public License along
- *                                with this program; if not, write to the Free Software Foundation, Inc.,
- *                                51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
-
 package org.labkey.sequenceanalysis.run.analysis;
 
 import org.apache.log4j.Logger;
@@ -59,7 +41,6 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         public Provider()
         {
             super("OncotatorAnalysis", "Oncotator Analysis", "GATK", "This will run GATK's Oncotator on the selected data. This tool annotates information onto genomic point mutations (SNPs/SNVs) and indels.", Arrays.asList(
-                    ToolParameterDescriptor.create("multithreaded", "Multithreaded?", "If checked, this tool will attempt to run in multi-threaded mode.  There are sometimes issues with this.", "checkbox", null, null),
                     ToolParameterDescriptor.create("useQueue", "Use Queue?", "If checked, this tool will attempt to run using GATK queue.  This is the preferred way to multi-thread this tool.", "checkbox", new JSONObject()
                     {{
                             put("checked", true);

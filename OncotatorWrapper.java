@@ -80,16 +80,6 @@ public class OncotatorWrapper extends AbstractGatkWrapper
             args.addAll(options);
         }
 
-        if (_multiThreaded)
-        {
-            Integer maxThreads = SequenceTaskHelper.getMaxThreads(getLogger());
-            if (maxThreads != null)
-            {
-                args.add("-nct");
-                args.add(maxThreads.toString());
-            }
-        }
-
         execute(args);
         if (!outputFile.exists())
         {
