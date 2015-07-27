@@ -59,9 +59,6 @@ public class OncotatorWrapper extends AbstractGatkWrapper
 
         ensureDictionary(referenceFasta);
 
-        File expectedIndex = new File(inputVcf.getPath() + ".vcf");
-        boolean doDeleteIndex = false;
-
         List<String> args = new ArrayList<>();
         args.add("java");
         args.addAll(getBaseParams());
@@ -85,38 +82,13 @@ public class OncotatorWrapper extends AbstractGatkWrapper
         {
             throw new PipelineJobException("Expected output not found: " + outputFile.getPath());
         }
-
-        if (doDeleteIndex)
-        {
-            getLogger().debug("\tdeleting temp BAM index: " + expectedIndex.getPath());
-            expectedIndex.delete();
-        }
     }
 
-    public void executeWithQueue(File inputBam, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
+    public void executeWithQueue(File inputVcf, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
     {
-        getLogger().info("Running GATK Oncotator using Queue for: " + inputBam.getName());
+        getLogger().info("Running GATK Oncotator using Queue for: " + inputVcf.getName());
 
         ensureDictionary(referenceFasta);
-
-        File expectedIndex = new File(inputBam.getPath() + ".bai");
-        boolean doDeleteIndex = false;
-        if (!expectedIndex.exists())
-        {
-            getLogger().debug("\tcreating temp index for BAM: " + inputBam.getName());
-            //TODO: SamReaderFactory fact = SamReaderFactory.make();
-            try (SAMFileReader reader = new SAMFileReader(inputBam))
-            {
-                reader.setValidationStringency(ValidationStringency.SILENT);
-                BAMIndexer.createIndex(reader, expectedIndex);
-            }
-
-            doDeleteIndex = true;
-        }
-        else
-        {
-            getLogger().debug("\tusing existing index: " + expectedIndex.getPath());
-        }
 
         try
         {
@@ -147,7 +119,7 @@ public class OncotatorWrapper extends AbstractGatkWrapper
             args.add("-R");
             args.add(referenceFasta.getPath());
             args.add("-I");
-            args.add(inputBam.getPath());
+            args.add(inputVcf.getPath());
             args.add("-o");
             args.add(outputFile.getPath());
             if (options != null)
@@ -173,11 +145,6 @@ public class OncotatorWrapper extends AbstractGatkWrapper
                 throw new PipelineJobException("Expected output not found: " + outputFile.getPath());
             }
 
-            if (doDeleteIndex)
-            {
-                getLogger().debug("\tdeleting temp BAM index: " + expectedIndex.getPath());
-                expectedIndex.delete();
-            }
         }
         catch (IOException e)
         {
