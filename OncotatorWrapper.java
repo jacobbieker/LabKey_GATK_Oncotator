@@ -57,7 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by bimber on 8/8/2014.
+ * Created by Jacob Bieker on 7/27/2015.
  */
 public class OncotatorWrapper extends AbstractGatkWrapper
 {
