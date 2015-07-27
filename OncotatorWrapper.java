@@ -1,21 +1,3 @@
-/*
- * Copyright (C) 2015.  Jacob Bieker, jacob@bieker.us, ww.jacobbieker.com
- *
- *                                This program is free software; you can redistribute it and/or modify
- *                                it under the terms of the GNU General Public License as published by
- *                                the Free Software Foundation; either version 2 of the License, or
- *                                (at your option) any later version.
- *
- *                                This program is distributed in the hope that it will be useful,
- *                                but WITHOUT ANY WARRANTY; without even the implied warranty of
- *                                MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *                                GNU General Public License for more details.
- *
- *                                You should have received a copy of the GNU General Public License along
- *                                with this program; if not, write to the Free Software Foundation, Inc.,
- *                                51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
-
 package org.labkey.sequenceanalysis.run.util;
 
 import htsjdk.samtools.BAMIndexer;
@@ -35,8 +17,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-package org.labkey.sequenceanalysis.run.util;
 
 import htsjdk.samtools.BAMIndexer;
 import htsjdk.samtools.SAMFileReader;
@@ -57,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Jacob Bieker on 7/27/2015.
+ * Created by Jacob Bieker on 8/8/2014.
  */
 public class OncotatorWrapper extends AbstractGatkWrapper
 {
@@ -73,30 +53,14 @@ public class OncotatorWrapper extends AbstractGatkWrapper
         _multiThreaded = multiThreaded;
     }
 
-    public void execute(File inputBam, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
+    public void execute(File inputVcf, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
     {
-        getLogger().info("Running GATK Oncotator for: " + inputBam.getName());
+        getLogger().info("Running GATK Oncotator for: " + inputVcf.getName());
 
         ensureDictionary(referenceFasta);
 
-        File expectedIndex = new File(inputBam.getPath() + ".bai");
+        File expectedIndex = new File(inputVcf.getPath() + ".vcf");
         boolean doDeleteIndex = false;
-        if (!expectedIndex.exists())
-        {
-            getLogger().debug("\tcreating temp index for BAM: " + inputBam.getName());
-            //TODO: SamReaderFactory fact = SamReaderFactory.make();
-            try (SAMFileReader reader = new SAMFileReader(inputBam))
-            {
-                reader.setValidationStringency(ValidationStringency.SILENT);
-                BAMIndexer.createIndex(reader, expectedIndex);
-            }
-
-            doDeleteIndex = true;
-        }
-        else
-        {
-            getLogger().debug("\tusing existing index: " + expectedIndex.getPath());
-        }
 
         List<String> args = new ArrayList<>();
         args.add("java");
@@ -108,7 +72,7 @@ public class OncotatorWrapper extends AbstractGatkWrapper
         args.add("-R");
         args.add(referenceFasta.getPath());
         args.add("-I");
-        args.add(inputBam.getPath());
+        args.add(inputVcf.getPath());
         args.add("-o");
         args.add(outputFile.getPath());
         if (options != null)
@@ -141,7 +105,7 @@ public class OncotatorWrapper extends AbstractGatkWrapper
 
     public void executeWithQueue(File inputBam, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
     {
-        getLogger().info("Running GATK HaplotypeCaller using Queue for: " + inputBam.getName());
+        getLogger().info("Running GATK Oncotator using Queue for: " + inputBam.getName());
 
         ensureDictionary(referenceFasta);
 
