@@ -14,9 +14,7 @@ import org.labkey.api.sequenceanalysis.pipeline.PipelineStepProvider;
 import org.labkey.api.sequenceanalysis.pipeline.ReferenceGenome;
 import org.labkey.api.sequenceanalysis.pipeline.ToolParameterDescriptor;
 import org.labkey.api.sequenceanalysis.run.AbstractCommandPipelineStep;
-import org.labkey.api.sequenceanalysis.run.AbstractCommandWrapper;
 import org.labkey.api.util.FileUtil;
-import org.labkey.sequenceanalysis.run.util.HaplotypeCallerWrapper;
 import org.labkey.sequenceanalysis.run.util.OncotatorWrapper;
 
 import java.io.File;
@@ -41,9 +39,29 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         public Provider()
         {
             super("OncotatorAnalysis", "Oncotator Analysis", "GATK", "This will run GATK's Oncotator on the selected data. This tool annotates information onto genomic point mutations (SNPs/SNVs) and indels.", Arrays.asList(
-                    ToolParameterDescriptor.create("useQueue", "Use Queue?", "If checked, this tool will attempt to run using GATK queue.  This is the preferred way to multi-thread this tool.", "checkbox", new JSONObject()
+                    ToolParameterDescriptor.create("inputFormat", "Input Format", "Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias) are present.", "checkbox", new JSONObject()
                     {{
                             put("checked", true);
+                        }}, true),
+                    ToolParameterDescriptor.create("outputFormat", "Output Format", "Output format. This can either be a TCGAMAF or VCF", "checkbox", new JSONObject()
+                    {{
+                            put("checked", true);
+                        }}, true),
+                    ToolParameterDescriptor.create("tx-mode", "TX-mode", "Specify transcript mode for transcript providing datasources that support multiple modes.", "checkbox", new JSONObject()
+                    {{
+                            put("checked", true);
+                        }}, true),
+                    ToolParameterDescriptor.create("inferGenotypes", "Infer Genotypes", "Forces the output renderer to populate the output genotypes as heterozygous. This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.", "checkbox", new JSONObject()
+                    {{
+                            put("checked", false);
+                        }}, true),
+                    ToolParameterDescriptor.create("skipNoAlt", "Skip No Alt", "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered. Do not use if output format is a VCF. If alt_allele_seen annotation is missing, render the mutation.", "checkbox", new JSONObject()
+                    {{
+                            put("checked", false);
+                        }}, true),
+                    ToolParameterDescriptor.create("prepend", "Prepend", "If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs", "checkbox", new JSONObject()
+                    {{
+                            put("checked", false);
                         }}, true)
             ), null, null);
         }
@@ -63,32 +81,24 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
     }
 
     @Override
-    public Output performAnalysisPerSampleRemote(Readset rs, File inputBam, ReferenceGenome referenceGenome, File outputDir) throws PipelineJobException
+    public Output performAnalysisPerSampleRemote(Readset rs, File inputVcf, ReferenceGenome referenceGenome, File outputDir) throws PipelineJobException
     {
         AnalysisOutputImpl output = new AnalysisOutputImpl();
-        output.addInput(inputBam, "Input BAM File");
+        output.addInput(inputVcf, "Input VCF File");
 
-        File outputFile = new File(outputDir, FileUtil.getBaseName(inputBam) + ".g.vcf.gz");
-        File idxFile = new File(outputDir, FileUtil.getBaseName(inputBam) + ".g.vcf.gz.idx");
-
-        if (getProvider().getParameterByName("multithreaded").extractValue(getPipelineCtx().getJob(), getProvider(), Boolean.class, false))
-        {
-            getPipelineCtx().getLogger().debug("Oncotator will run multi-threaded");
-            getWrapper().setMultiThreaded(true);
-        }
+        File outputFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".vcf.gz");
+        File idxFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".vcf.gz.idx");
 
         getWrapper().setOutputDir(outputDir);
 
         if (getProvider().getParameterByName("useQueue").extractValue(getPipelineCtx().getJob(), getProvider(), Boolean.class, false))
         {
-            getWrapper().executeWithQueue(inputBam, referenceGenome.getWorkingFastaFile(), outputFile, getClientCommandArgs());
+            getWrapper().executeWithQueue(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, getClientCommandArgs());
         }
         else
         {
             List<String> args = new ArrayList<>();
             args.addAll(getClientCommandArgs());
-            args.add("--emitRefConfidence");
-            args.add("GVCF");
 
             args.add("--variant_index_type");
             args.add("LINEAR");
@@ -96,11 +106,11 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
             args.add("--variant_index_parameter");
             args.add("128000");
 
-            getWrapper().execute(inputBam, referenceGenome.getWorkingFastaFile(), outputFile, args);
+            getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, args);
         }
 
-        output.addOutput(outputFile, "gVCF File");
-        output.addSequenceOutput(outputFile, rs.getName() + ": HaplotypeCaller Variants", "gVCF File", rs.getReadsetId(), null, referenceGenome.getGenomeId());
+        output.addOutput(outputFile, "VCF File");
+        output.addSequenceOutput(outputFile, rs.getName() + ": Oncotator Annotations", "VCF File", rs.getReadsetId(), null, referenceGenome.getGenomeId());
         if (idxFile.exists())
         {
             output.addOutput(idxFile, "VCF Index");
@@ -110,7 +120,7 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
     }
 
     @Override
-    public Output performAnalysisPerSampleLocal(AnalysisModel model, File inputBam, File referenceFasta) throws PipelineJobException
+    public Output performAnalysisPerSampleLocal(AnalysisModel model, File inputVcf, File referenceFasta) throws PipelineJobException
     {
         return null;
     }
