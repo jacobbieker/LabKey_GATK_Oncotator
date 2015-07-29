@@ -41,16 +41,10 @@ import java.util.List;
  */
 public class OncotatorWrapper extends AbstractGatkWrapper
 {
-    private boolean _multiThreaded = false;
 
     public OncotatorWrapper(Logger log)
     {
         super(log);
-    }
-
-    public void setMultiThreaded(boolean multiThreaded)
-    {
-        _multiThreaded = multiThreaded;
     }
 
     public void execute(File inputVcf, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
@@ -81,74 +75,6 @@ public class OncotatorWrapper extends AbstractGatkWrapper
         if (!outputFile.exists())
         {
             throw new PipelineJobException("Expected output not found: " + outputFile.getPath());
-        }
-    }
-
-    public void executeWithQueue(File inputVcf, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
-    {
-        getLogger().info("Running GATK Oncotator using Queue for: " + inputVcf.getName());
-
-        ensureDictionary(referenceFasta);
-
-        try
-        {
-            Module module = ModuleLoader.getInstance().getModule(SequenceAnalysisModule.class);
-            FileResource r = (FileResource)module.getModuleResolver().lookup(Path.parse("external/qscript/HaplotypeCallerRunner.scala"));
-            File scalaScript = r.getFile();
-
-            if (scalaScript == null)
-                throw new FileNotFoundException("Not found: " + scalaScript);
-
-            if (!scalaScript.exists())
-                throw new FileNotFoundException("Not found: " + scalaScript.getPath());
-
-            List<String> args = new ArrayList<>();
-            args.add("java");
-            args.addAll(getBaseParams());
-            args.add("-classpath");
-            args.add(getJAR().getPath());
-
-            args.add("-jar");
-            args.add(getQueueJAR().getPath());
-            args.add("-S");
-            args.add(scalaScript.getPath());
-            args.add("-jobRunner");
-            args.add("ParallelShell");
-            args.add("-run");
-
-            args.add("-R");
-            args.add(referenceFasta.getPath());
-            args.add("-I");
-            args.add(inputVcf.getPath());
-            args.add("-o");
-            args.add(outputFile.getPath());
-            if (options != null)
-            {
-                args.addAll(options);
-            }
-
-            args.add("-startFromScratch");
-            args.add("-scatterCount");
-            Integer maxThreads = SequenceTaskHelper.getMaxThreads(getLogger());
-            if (maxThreads != null)
-            {
-                args.add(maxThreads.toString());
-            }
-            else
-            {
-                args.add("1");
-            }
-
-            execute(args);
-            if (!outputFile.exists())
-            {
-                throw new PipelineJobException("Expected output not found: " + outputFile.getPath());
-            }
-
-        }
-        catch (IOException e)
-        {
-            throw new PipelineJobException(e);
         }
     }
 }

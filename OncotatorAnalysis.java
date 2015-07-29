@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.sequenceanalysis.SequenceAnalysisService;
 import org.labkey.api.sequenceanalysis.model.AnalysisModel;
 import org.labkey.api.sequenceanalysis.model.Readset;
 import org.labkey.api.sequenceanalysis.pipeline.AbstractAnalysisStepProvider;
@@ -15,6 +16,7 @@ import org.labkey.api.sequenceanalysis.pipeline.ReferenceGenome;
 import org.labkey.api.sequenceanalysis.pipeline.ToolParameterDescriptor;
 import org.labkey.api.sequenceanalysis.run.AbstractCommandPipelineStep;
 import org.labkey.api.util.FileUtil;
+import org.labkey.sequenceanalysis.run.alignment.AlignerIndexUtil;
 import org.labkey.sequenceanalysis.run.util.OncotatorWrapper;
 
 import java.io.File;
@@ -39,30 +41,22 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         public Provider()
         {
             super("OncotatorAnalysis", "Oncotator Analysis", "GATK", "This will run GATK's Oncotator on the selected data. This tool annotates information onto genomic point mutations (SNPs/SNVs) and indels.", Arrays.asList(
-                    ToolParameterDescriptor.create("inputFormat", "Input Format", "Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias) are present.", "checkbox", new JSONObject()
+                    ToolParameterDescriptor.create("inputFormat", "Input Format", "Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias) are present. This can be either VCF or MAF", "textfield", new JSONObject()
                     {{
-                            put("checked", true);
-                        }}, true),
-                    ToolParameterDescriptor.create("outputFormat", "Output Format", "Output format. This can either be a TCGAMAF or VCF", "checkbox", new JSONObject()
+                        }}, "MAF"),
+                    ToolParameterDescriptor.create("outputFormat", "Output Format", "Output format. This can either be a TCGAMAF, VCF, or SIMPLE_TSV", "checkbox", new JSONObject()
                     {{
-                            put("checked", true);
-                        }}, true),
-                    ToolParameterDescriptor.create("tx-mode", "TX-mode", "Specify transcript mode for transcript providing datasources that support multiple modes.", "checkbox", new JSONObject()
-                    {{
-                            put("checked", true);
-                        }}, true),
-                    ToolParameterDescriptor.create("inferGenotypes", "Infer Genotypes", "Forces the output renderer to populate the output genotypes as heterozygous. This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.", "checkbox", new JSONObject()
-                    {{
-                            put("checked", false);
-                        }}, true),
-                    ToolParameterDescriptor.create("skipNoAlt", "Skip No Alt", "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered. Do not use if output format is a VCF. If alt_allele_seen annotation is missing, render the mutation.", "checkbox", new JSONObject()
-                    {{
-                            put("checked", false);
-                        }}, true),
-                    ToolParameterDescriptor.create("prepend", "Prepend", "If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs", "checkbox", new JSONObject()
-                    {{
-                            put("checked", false);
-                        }}, true)
+
+                        }}, "TCGAMAF"),
+                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--infer_genotypes"), "inferGenotypes", "Infer Genotypes", "Forces the output renderer to populate the output genotypes as heterozygous. This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.", "checkbox", new JSONObject() {{
+                        put("checked", false);
+                    }}, true),
+                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--skip-no-alt"), "skipNoAlt", "Skip No Alt", "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered. Do not use if output format is a VCF. If alt_allele_seen annotation is missing, render the mutation.", "checkbox", new JSONObject() {{
+                        put("checked", false);
+                    }}, true),
+                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--prepend"), "prepend", "Prepend", "If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs", "checkbox", new JSONObject() {{
+                        put("checked", false);
+                    }}, true)
             ), null, null);
         }
 
@@ -93,7 +87,7 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
 
         if (getProvider().getParameterByName("useQueue").extractValue(getPipelineCtx().getJob(), getProvider(), Boolean.class, false))
         {
-            getWrapper().executeWithQueue(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, getClientCommandArgs());
+            getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, getClientCommandArgs());
         }
         else
         {
@@ -122,6 +116,10 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
     @Override
     public Output performAnalysisPerSampleLocal(AnalysisModel model, File inputVcf, File referenceFasta) throws PipelineJobException
     {
+        //perform a check to see if the reference files have been downloaded to the genome dir
+        File genomeDir = SequenceAnalysisService.get().getReferenceGenome(model.getReferenceLibrary(), getPipelineCtx().getJob().getUser()).getSourceFastaFile().getParentFile();
+        File cachedDir = new File(genomeDir, AlignerIndexUtil.INDEX_DIR + "/oncotator");
+
         return null;
     }
 }
