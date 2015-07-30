@@ -36,7 +36,7 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         super(provider, ctx, new OncotatorWrapper(ctx.getLogger()));
     }
 
-    public static class Provider extends AbstractAnalysisStepProvider<HaplotypeCallerAnalysis>
+    public static class Provider extends AbstractAnalysisStepProvider<OncotatorAnalysis>
     {
         public Provider()
         {
@@ -48,15 +48,18 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
                     {{
 
                         }}, "TCGAMAF"),
-                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--infer_genotypes"), "inferGenotypes", "Infer Genotypes", "Forces the output renderer to populate the output genotypes as heterozygous. This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.", "checkbox", new JSONObject() {{
-                        put("checked", false);
-                    }}, true),
-                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--skip-no-alt"), "skipNoAlt", "Skip No Alt", "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered. Do not use if output format is a VCF. If alt_allele_seen annotation is missing, render the mutation.", "checkbox", new JSONObject() {{
-                        put("checked", false);
-                    }}, true),
-                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--prepend"), "prepend", "Prepend", "If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs", "checkbox", new JSONObject() {{
-                        put("checked", false);
-                    }}, true)
+                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--infer_genotypes"), "inferGenotypes", "Infer Genotypes", "Forces the output renderer to populate the output genotypes as heterozygous. This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.", "checkbox", new JSONObject()
+                    {{
+                            put("checked", false);
+                        }}, true),
+                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--skip-no-alt"), "skipNoAlt", "Skip No Alt", "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered. Do not use if output format is a VCF. If alt_allele_seen annotation is missing, render the mutation.", "checkbox", new JSONObject()
+                    {{
+                            put("checked", false);
+                        }}, true),
+                    ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--prepend"), "prepend", "Prepend", "If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs", "checkbox", new JSONObject()
+                    {{
+                            put("checked", false);
+                        }}, true)
             ), null, null);
         }
 
@@ -83,24 +86,54 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         File outputFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".vcf.gz");
         File idxFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".vcf.gz.idx");
 
+        String outputFormat = getProvider().getParameterByName("outputFormat").extractValue(getPipelineCtx().getJob(), getProvider(), String.class, "MAF");
+        String inputFormat = getProvider().getParameterByName("inputFormat").extractValue(getPipelineCtx().getJob(), getProvider(), String.class, "MAF");
+
         getWrapper().setOutputDir(outputDir);
 
-        if (getProvider().getParameterByName("useQueue").extractValue(getPipelineCtx().getJob(), getProvider(), Boolean.class, false))
-        {
-            getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, getClientCommandArgs());
-        }
-        else
+        if (inputFormat.equalsIgnoreCase("MAF"))
         {
             List<String> args = new ArrayList<>();
             args.addAll(getClientCommandArgs());
-
-            args.add("--variant_index_type");
-            args.add("LINEAR");
-
-            args.add("--variant_index_parameter");
-            args.add("128000");
-
+            args.add("-i");
+            args.add("MAFLITE");
+            args.add("-o");
+            // Check what output format is requested
+            if (outputFormat.equalsIgnoreCase("SIMPLE_TSV"))
+            {
+                args.add("SIMPLE_TSV");
+            } else if (outputFormat.equalsIgnoreCase("VCF"))
+            {
+                args.add("VCF");
+            } else
+            {
+                args.add("TCGAMAF");
+            }
             getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, args);
+        }
+        else if (inputFormat.equalsIgnoreCase("VCF"))
+        {
+            List<String> args = new ArrayList<>();
+            args.addAll(getClientCommandArgs());
+            args.add("-i");
+            args.add("VCF");
+            args.add("-o");
+            // Check what output format is requested
+            if (outputFormat.equalsIgnoreCase("SIMPLE_TSV"))
+            {
+                args.add("SIMPLE_TSV");
+            } else if (outputFormat.equalsIgnoreCase("VCF"))
+            {
+                args.add("VCF");
+            } else
+            {
+                args.add("TCGAMAF");
+            }
+            getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, args);
+        }
+        else
+        {
+            System.out.println("Error: Not a valid input format");
         }
 
         output.addOutput(outputFile, "VCF File");
