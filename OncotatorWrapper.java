@@ -48,22 +48,23 @@ public class OncotatorWrapper extends AbstractCommandWrapper
         super(log);
     }
 
-    public void execute(File inputVcf, File referenceFasta, File outputFile, List<String> options) throws PipelineJobException
+    public void execute(File inputVcf, File outputFile, List<String> options) throws PipelineJobException
     {
-        getLogger().info("Running GATK Oncotator for: " + inputVcf.getName());
+        getLogger().info("Running Oncotator for: " + inputVcf.getName());
 
         List<String> args = new ArrayList<>();
-        args.add("-R");
-        args.add(referenceFasta.getPath());
-        args.add("-I");
-        args.add(inputVcf.getPath());
-        args.add("-o");
-        args.add(outputFile.getPath());
+        args.add("source <venv>/bin/activate");
+        args.add(inputVcf.getPath()); // Set to get virtualenv location
+        args.add("oncotator"); //To start Oncotator and run the rest of the commands
         if (options != null)
         {
             args.addAll(options);
         }
+        args.add(inputVcf.getPath());
+        args.add(outputFile.getPath());
+        args.add("hg19");
 
+        args.add("deactivate"); //Shut down virtualenv
         execute(args);
         if (!outputFile.exists())
         {

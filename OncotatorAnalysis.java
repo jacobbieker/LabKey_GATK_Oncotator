@@ -83,12 +83,10 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         AnalysisOutputImpl output = new AnalysisOutputImpl();
         output.addInput(inputVcf, "Input VCF File");
 
-        File outputFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".vcf.gz");
-        File idxFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".vcf.gz.idx");
-
         String outputFormat = getProvider().getParameterByName("outputFormat").extractValue(getPipelineCtx().getJob(), getProvider(), String.class, "MAF");
         String inputFormat = getProvider().getParameterByName("inputFormat").extractValue(getPipelineCtx().getJob(), getProvider(), String.class, "MAF");
 
+        File outputFile = new File(outputDir, FileUtil.getBaseName(inputVcf) + ".annotated");
         getWrapper().setOutputDir(outputDir);
 
         if (inputFormat.equalsIgnoreCase("MAF"))
@@ -109,10 +107,12 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
             {
                 args.add("TCGAMAF");
             }
-            getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, args);
+
+            getWrapper().execute(inputVcf, outputFile, args);
         }
         else if (inputFormat.equalsIgnoreCase("VCF"))
         {
+
             List<String> args = new ArrayList<>();
             args.addAll(getClientCommandArgs());
             args.add("-i");
@@ -127,9 +127,11 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
                 args.add("VCF");
             } else
             {
+
                 args.add("TCGAMAF");
             }
-            getWrapper().execute(inputVcf, referenceGenome.getWorkingFastaFile(), outputFile, args);
+
+            getWrapper().execute(inputVcf, outputFile, args);
         }
         else
         {
@@ -137,11 +139,6 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         }
 
         output.addOutput(outputFile, "VCF File");
-        output.addSequenceOutput(outputFile, rs.getName() + ": Oncotator Annotations", "VCF File", rs.getReadsetId(), null, referenceGenome.getGenomeId());
-        if (idxFile.exists())
-        {
-            output.addOutput(idxFile, "VCF Index");
-        }
 
         return output;
     }
