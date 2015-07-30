@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+if [[ ! -e ${LKTOOLS_DIR}/STAR || ! -z $FORCE_REINSTALL ]];
+then
+    echo "Cleaning up previous installs"
+    rm -Rf STAR_2.4*
+    rm -Rf $LKTOOLS_DIR/STAR
+
+    wget --read-timeout=10 https://github.com/alexdobin/STAR/archive/STAR_2.4.2a.tar.gz
+    gunzip STAR_2.4.2a.tar.gz
+    tar -xf STAR_2.4.2a.tar
+    gzip STAR_2.4.2a.tar
+
+    install ./STAR-STAR_2.4.2a/bin/Linux_x86_64_static/STAR $LKTOOLS_DIR/STAR
+else
+    echo "Already installed"
+fi
