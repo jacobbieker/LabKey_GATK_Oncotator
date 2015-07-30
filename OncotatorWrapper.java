@@ -8,6 +8,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.resource.FileResource;
+import org.labkey.api.sequenceanalysis.run.AbstractCommandWrapper;
 import org.labkey.api.util.Path;
 import org.labkey.sequenceanalysis.SequenceAnalysisModule;
 import org.labkey.sequenceanalysis.pipeline.SequenceTaskHelper;
@@ -39,7 +40,7 @@ import java.util.List;
 /**
  * Created by Jacob Bieker on 8/8/2014.
  */
-public class OncotatorWrapper extends AbstractGatkWrapper
+public class OncotatorWrapper extends AbstractCommandWrapper
 {
 
     public OncotatorWrapper(Logger log)
@@ -51,15 +52,7 @@ public class OncotatorWrapper extends AbstractGatkWrapper
     {
         getLogger().info("Running GATK Oncotator for: " + inputVcf.getName());
 
-        ensureDictionary(referenceFasta);
-
         List<String> args = new ArrayList<>();
-        args.add("java");
-        args.addAll(getBaseParams());
-        args.add("-jar");
-        args.add(getJAR().getPath());
-        args.add("-T");
-        args.add("Oncotator");
         args.add("-R");
         args.add(referenceFasta.getPath());
         args.add("-I");
