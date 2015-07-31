@@ -78,8 +78,11 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
     }
 
     @Override
-    public Output performAnalysisPerSampleRemote(Readset rs, File inputVcf, ReferenceGenome referenceGenome, File outputDir) throws PipelineJobException
+    public Output performAnalysisPerSampleRemote(Readset rs, File inputVcf, File outputDir) throws PipelineJobException
     {
+        File genomeDir = SequenceAnalysisService.get().getReferenceGenome(model.getReferenceLibrary(), getPipelineCtx().getJob().getUser()).getSourceFastaFile().getParentFile();
+        File cachedDir = new File(genomeDir, AlignerIndexUtil.INDEX_DIR + "/oncotator");
+
         AnalysisOutputImpl output = new AnalysisOutputImpl();
         output.addInput(inputVcf, "Input VCF File");
 

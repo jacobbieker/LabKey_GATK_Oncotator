@@ -7,12 +7,19 @@ then
     rm -Rf $LKTOOLS_DIR/oncotator
 
     wget --read-timeout=10 https://github.com/broadinstitute/oncotator/archive/v1.8.0.0.tar.gz
-    gunzip oncotator-1.8.0.0.tar.gz
-    tar -xf oncotator-1.8.0.0.tar
-    gzip oncotator-1.8.0.0.tar
+    tar zxvf oncotator-1.8.0.0.tar
+
+    wget --read-timeout=10 http://www.broadinstitute.org/~lichtens/oncobeta/oncotator_v1_ds_Jan262015.tar.gz
+    tar zxvf oncotator_v1_ds_Jan262015.tar.gz
+
+    cd oncotator-1.8.0.0
 
     pip install virtualenv
-    install ./scripts/create_oncotator_venv.sh -e $LKTOOLS_DIR/oncotator
+    ./scripts/create_oncotator_venv.sh -e $LKTOOLS_DIR/oncotator
+
+    source $LKTOOLS_DIR/oncotator/bin/activate
+    python setup.py install
+    deactivate
 else
     echo "Already installed"
 fi
