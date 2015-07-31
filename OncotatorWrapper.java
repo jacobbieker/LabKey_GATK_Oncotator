@@ -54,8 +54,10 @@ public class OncotatorWrapper extends AbstractCommandWrapper
 
         List<String> args = new ArrayList<>();
         args.add("source <venv>/bin/activate");
-        args.add(inputVcf.getPath()); // Set to get virtualenv location
+        args.add(inputVcf.getPath()); //TODO: Set to get virtualenv location
         args.add("oncotator"); //To start Oncotator and run the rest of the commands
+        args.add("--db-dir");
+        args.add(/path/to/oncotator_v1_ds_Jan262015); //TODO set to get the datasources path
         if (options != null)
         {
             args.addAll(options);
