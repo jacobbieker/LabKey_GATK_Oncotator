@@ -66,8 +66,11 @@ public class OncotatorWrapper extends AbstractCommandWrapper
         args.add(outputFile.getPath());
         args.add("hg19");
 
-        args.add("deactivate"); //Shut down virtualenv
         execute(args);
+
+        List<String> virtualenvArgs = new ArrayList<>();
+        virtualenvArgs.add("deactivate"); // Shut down virtual enviroment
+        execute(virtualenvArgs);
         if (!outputFile.exists())
         {
             throw new PipelineJobException("Expected output not found: " + outputFile.getPath());

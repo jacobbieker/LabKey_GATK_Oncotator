@@ -152,7 +152,6 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         //perform a check to see if the reference files have been downloaded to the genome dir
         File genomeDir = SequenceAnalysisService.get().getReferenceGenome(model.getReferenceLibrary(), getPipelineCtx().getJob().getUser()).getSourceFastaFile().getParentFile();
         File cachedDir = new File(genomeDir, AlignerIndexUtil.INDEX_DIR + "/oncotator");
-
         return null;
     }
 }
