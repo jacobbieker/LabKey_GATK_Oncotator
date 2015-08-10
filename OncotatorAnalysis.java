@@ -41,13 +41,12 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         public Provider()
         {
             super("OncotatorAnalysis", "Oncotator Analysis", "GATK", "This will run GATK's Oncotator on the selected data. This tool annotates information onto genomic point mutations (SNPs/SNVs) and indels.", Arrays.asList(
-                    ToolParameterDescriptor.create("inputFormat", "Input Format", "Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias) are present. This can be either VCF or MAF", "textfield", new JSONObject()
-                    {{
-                        }}, "MAF"),
-                    ToolParameterDescriptor.create("outputFormat", "Output Format", "Output format. This can either be a TCGAMAF, VCF, or SIMPLE_TSV", "checkbox", new JSONObject()
-                    {{
-
-                        }}, "TCGAMAF"),
+                    ToolParameterDescriptor.create("inputFormat", "Input Format", "Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias) are present. This can be either VCF or MAF", "ldk-simplecombo", new JSONObject(){{
+                        put("storeValues", "MAF;VCF");
+                    }}, true),
+                    ToolParameterDescriptor.create("outputFormat", "Output Format", "Output format. This can either be a TCGAMAF, VCF, or SIMPLE_TSV", "ldk-simplecombo", new JSONObject(){{
+                        put("storeValues", "TCGAMAF;VCF;SIMPLE_TSV");
+                    }}, true),
                     ToolParameterDescriptor.createCommandLineParam(CommandLineParam.createSwitch("--infer_genotypes"), "inferGenotypes", "Infer Genotypes", "Forces the output renderer to populate the output genotypes as heterozygous. This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.", "checkbox", new JSONObject()
                     {{
                             put("checked", false);
@@ -78,10 +77,8 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
     }
 
     @Override
-    public Output performAnalysisPerSampleRemote(Readset rs, File inputVcf, File outputDir) throws PipelineJobException
+    public Output performAnalysisPerSampleRemote(Readset rs, File inputVcf, ReferenceGenome referenceGenome, File outputDir) throws PipelineJobException
     {
-        File genomeDir = SequenceAnalysisService.get().getReferenceGenome(model.getReferenceLibrary(), getPipelineCtx().getJob().getUser()).getSourceFastaFile().getParentFile();
-        File cachedDir = new File(genomeDir, AlignerIndexUtil.INDEX_DIR + "/oncotator");
 
         AnalysisOutputImpl output = new AnalysisOutputImpl();
         output.addInput(inputVcf, "Input VCF File");
@@ -152,6 +149,7 @@ public class OncotatorAnalysis extends AbstractCommandPipelineStep<OncotatorWrap
         //perform a check to see if the reference files have been downloaded to the genome dir
         File genomeDir = SequenceAnalysisService.get().getReferenceGenome(model.getReferenceLibrary(), getPipelineCtx().getJob().getUser()).getSourceFastaFile().getParentFile();
         File cachedDir = new File(genomeDir, AlignerIndexUtil.INDEX_DIR + "/oncotator");
+
         return null;
     }
 }
