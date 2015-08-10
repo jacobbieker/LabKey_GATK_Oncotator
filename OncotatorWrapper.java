@@ -8,6 +8,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.resource.FileResource;
+import org.labkey.api.sequenceanalysis.pipeline.SequencePipelineService;
 import org.labkey.api.sequenceanalysis.run.AbstractCommandWrapper;
 import org.labkey.api.util.Path;
 import org.labkey.sequenceanalysis.SequenceAnalysisModule;
@@ -52,12 +53,18 @@ public class OncotatorWrapper extends AbstractCommandWrapper
     {
         getLogger().info("Running Oncotator for: " + inputVcf.getName());
 
+        // Starts the Python virtualenv for Oncotator
+        List<String> startVirtualEnvArgs = new ArrayList<>();
+        startVirtualEnvArgs.add("source " + getExe().getPath() + "/bin/activate"); // Gets the path to the virtualenv and starts it
+        execute(startVirtualEnvArgs);
+
+        // Actual args to pass
         List<String> args = new ArrayList<>();
-        args.add("source <venv>/bin/activate");
-        args.add(inputVcf.getPath()); //TODO: Set to get virtualenv location
+
         args.add("oncotator"); //To start Oncotator and run the rest of the commands
-        args.add("--db-dir");
-        args.add(/path/to/oncotator_v1_ds_Jan262015); //TODO set to get the datasources path
+
+        args.add("--db-dir"); //Get the path to the datasource directory, assumed default
+        args.add("../../oncotator_v1_ds_Jan262015"); //TODO set to get the datasources path
         if (options != null)
         {
             args.addAll(options);
@@ -68,6 +75,7 @@ public class OncotatorWrapper extends AbstractCommandWrapper
 
         execute(args);
 
+        // Args to shut down Python Virtual enviroment when done
         List<String> virtualenvArgs = new ArrayList<>();
         virtualenvArgs.add("deactivate"); // Shut down virtual enviroment
         execute(virtualenvArgs);
@@ -75,6 +83,11 @@ public class OncotatorWrapper extends AbstractCommandWrapper
         {
             throw new PipelineJobException("Expected output not found: " + outputFile.getPath());
         }
+    }
+
+    public File getExe()
+    {
+        return SequencePipelineService.get().getExeForPackage("ONCOTATORPATH", "oncotator");
     }
 }
 
