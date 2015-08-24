@@ -12,7 +12,7 @@ then
     wget --read-timeout=10 http://www.broadinstitute.org/~lichtens/oncobeta/oncotator_v1_ds_Jan262015.tar.gz
     tar zxvf oncotator_v1_ds_Jan262015.tar.gz
 
-    cd v1.8.0.0
+    cd oncotator-1.8.0.0
 
     pip install virtualenv
     ./scripts/create_oncotator_venv.sh -e $LKTOOLS_DIR/oncotator
